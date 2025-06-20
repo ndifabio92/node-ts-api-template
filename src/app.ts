@@ -1,27 +1,27 @@
-import { EnvConfiguration } from './config/envConfiguration';
-import { AppRoutes } from './presentation/routes';
-import { Server } from './presentation/server';
+import express from "express";
+import { corsMiddleware } from "./middlewares/cors";
+import { envs } from "./config/environment";
+import apiRoutes from "./routes/index";
 
-(async () => {
-    main();
-})();
+const app = express();
+const PORT = envs.port;
 
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(corsMiddleware);
 
-function main() {
+// Rutas
+app.use("/v1/api", apiRoutes);
 
-    const server = new Server({
-        environment: EnvConfiguration.ENVIRONMENT,
-        port: EnvConfiguration.PORT,
-        database_url: EnvConfiguration.DATABASE_URL,
-        db_host: EnvConfiguration.DB_HOST,
-        db_name: EnvConfiguration.DB_NAME,
-        db_password: EnvConfiguration.DB_PASSWORD,
-        db_port: EnvConfiguration.DB_PORT,
-        db_username: EnvConfiguration.DB_USERNAME,
-        jwt_secret: EnvConfiguration.JWT_SECRET,
-        origin: EnvConfiguration.ORIGIN || [],
-        routes: AppRoutes.routes,
-    });
+// Middleware de manejo de errores
+// app.use(ErrorHandler.handle);
 
-    server.start();
-}
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`📡 API disponible en http://localhost:${PORT}/v1/api`);
+  console.log(`🏥 Health check en http://localhost:${PORT}/v1/api/health`);
+});
+
+export default app;
