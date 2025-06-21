@@ -1,13 +1,21 @@
 {
   "name": "ts-api-template",
   "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "description": "Node.js TypeScript API Template",
+  "main": "dist/server.js",
+  "type": "module",
   "scripts": {
-    "dev": "tsx watch src/app.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "rimraf ./dist && tsc",
-    "start": "npm run build && node dist/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && node dist/server.js",
+    "test": "jest",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "type-check": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -16,7 +24,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/ndifabio92/node-ts-api-template/issues"
   },
@@ -25,21 +32,28 @@
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.0",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.0.3",
+    "@types/nodemailer": "^6.4.17",
+    "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "eslint": "^9.29.0",
+    "supertest": "^7.1.1",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "env-var": "^7.5.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.0",
-    "rimraf": "^6.0.1"
+    "nodemailer": "^7.0.3",
+    "rimraf": "^6.0.1",
+    "zod": "^3.25.67"
   }
 }
