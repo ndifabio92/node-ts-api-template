@@ -1,5 +1,6 @@
 import express, { Express } from "express";
 import { corsMiddleware } from "./middlewares/cors";
+import { ErrorHandler } from "./middlewares/errorHandler";
 import { envs } from "./config/environment";
 import apiRoutes from "./routes/index";
 import helmet from "helmet";
@@ -17,7 +18,7 @@ export class App {
     this.initializeMiddlewares();
     this.initializeSwagger();
     this.initializeRoutes();
-    // this.initializeErrorHandling();
+    this.initializeErrorHandling();
   }
 
   private initializeMiddlewares() {
@@ -55,18 +56,18 @@ export class App {
     this.app.use("/v1/api", apiRoutes);
   }
 
-  // private initializeErrorHandling() {
-  //   // Middleware para rutas no encontradas
-  //   this.app.use((req, res) => {
-  //     res.status(404).json({
-  //       success: false,
-  //       message: `Route ${req.originalUrl} not found`,
-  //     });
-  //   });
+  private initializeErrorHandling() {
+    // Middleware para rutas no encontradas
+    this.app.use((req, res) => {
+      res.status(404).json({
+        success: false,
+        message: `Route ${req.originalUrl} not found`,
+      });
+    });
 
-  //   // Middleware de manejo de errores
-  //   this.app.use(ErrorHandler.handle as any);
-  // }
+    // Middleware de manejo de errores
+    this.app.use(ErrorHandler.handle as any);
+  }
 
   public getApp(): Express {
     return this.app;
