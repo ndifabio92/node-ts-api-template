@@ -3,6 +3,9 @@ import { corsMiddleware } from "./middlewares/cors";
 import { envs } from "./config/environment";
 import apiRoutes from "./routes/index";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
+import { specs } from "./config/swagger";
+import "./swagger"; // Import all Swagger documentation
 
 export class App {
   private app: Express;
@@ -12,6 +15,7 @@ export class App {
     this.app = express();
     this.port = envs.port;
     this.initializeMiddlewares();
+    this.initializeSwagger();
     this.initializeRoutes();
     // this.initializeErrorHandling();
   }
@@ -23,16 +27,31 @@ export class App {
     this.app.use(helmet());
   }
 
-  private initializeRoutes() {
-    // Ruta para verificar que la API está funcionando
-    this.app.get("/", (req, res) => {
-      res.json({
-        message: "API is running",
-        version: "1.0.0",
-        timestamp: new Date().toISOString(),
-      });
-    });
+  private initializeSwagger() {
+    // Swagger UI setup
+    this.app.use(
+      "/v1/api/swagger",
+      swaggerUi.serve,
+      swaggerUi.setup(specs, {
+        customCss: ".swagger-ui .topbar { display: none }",
+        customSiteTitle: "Node.js TypeScript API Documentation",
+        customfavIcon: "/favicon.ico",
+        swaggerOptions: {
+          docExpansion: "list",
+          filter: true,
+          showRequestHeaders: true,
+        },
+      })
+    );
 
+    // Serve Swagger JSON
+    this.app.get("/swagger.json", (req, res) => {
+      res.setHeader("Content-Type", "application/json");
+      res.send(specs);
+    });
+  }
+
+  private initializeRoutes() {
     this.app.use("/v1/api", apiRoutes);
   }
 
@@ -59,6 +78,9 @@ export class App {
       console.log(`📡 API disponible en http://localhost:${this.port}/v1/api`);
       console.log(
         `🏥 Health check en http://localhost:${this.port}/v1/api/health`
+      );
+      console.log(
+        `📚 Documentación Swagger en http://localhost:${this.port}/v1/api/swagger`
       );
       console.log(
         `🌍 Environment: ${envs.development ? "development" : "prod"}`

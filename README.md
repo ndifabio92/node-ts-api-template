@@ -94,7 +94,7 @@ src/
 | Variable            | Descripción                   | Requerido | Por Defecto |
 | ------------------- | ----------------------------- | --------- | ----------- |
 | `PORT`              | Puerto del servidor           | No        | 4000        |
-| `NODE_ENV`          | Ambiente de ejecución         | No        | development |
+| `DEVELOPMENT`       | Ambiente de ejecución         | No        | development |
 | `CORS_ORIGIN`       | Orígenes permitidos para CORS | No        | \*          |
 | `MAILER_SERVICE`    | Servicio de email             | Sí        | -           |
 | `MAILER_EMAIL`      | Email del remitente           | Sí        | -           |
@@ -133,65 +133,10 @@ npm run test:integration
 npm run test:coverage
 ```
 
-## 📡 API Endpoints
-
-### Health Check
-
-- `GET /v1/api/health` - Verificar estado del servicio
-  - **Respuesta ejemplo:**
-    ```json
-    {
-      "success": true,
-      "message": "Health check completed",
-      "data": {
-        "status": "OK",
-        "timestamp": "2024-06-01T12:00:00.000Z",
-        "uptime": 123.45,
-        "environment": "development",
-        "version": "1.0.0",
-        "services": { "email": true }
-      }
-    }
-    ```
-
-### Email Service
-
-- `POST /v1/api/email/send` - Enviar email
-  - **Body ejemplo:**
-    ```json
-    {
-      "to": "destinatario@correo.com",
-      "subject": "Hola!",
-      "html": "<b>Mensaje de prueba</b>"
-    }
-    ```
-  - **Respuesta ejemplo:**
-    ```json
-    {
-      "success": true,
-      "message": "Email sent successfully",
-      "data": { "sent": true }
-    }
-    ```
-
-### API Status
-
-- `GET /` - Verifica que la API está corriendo
-  - **Respuesta ejemplo:**
-    ```json
-    {
-      "message": "API is running",
-      "version": "1.0.0",
-      "timestamp": "2024-06-01T12:00:00.000Z"
-    }
-    ```
-
 ## 🔒 Seguridad
 
 - **Helmet** - Headers de seguridad HTTP
 - **CORS** - Configuración de Cross-Origin Resource Sharing
-- **Rate Limiting** - Protección contra ataques de fuerza bruta (pendiente)
-- **Input Validation** - Validación de entrada (pendiente)
 
 ## 🚀 Despliegue
 
@@ -209,35 +154,3 @@ npm run test:coverage
    ```bash
    npm start
    ```
-
-### Docker (Pendiente)
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-EXPOSE 4000
-CMD ["node", "dist/app.js"]
-```
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia ISC. Ver el archivo `LICENSE` para más detalles.
-
-## 🆘 Soporte
-
-Si tienes alguna pregunta o problema, por favor abre un issue en el repositorio.
-
----
-
-Desarrollado con ❤️ por [Tu Nombre]
