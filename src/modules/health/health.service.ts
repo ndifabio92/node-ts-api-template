@@ -1,4 +1,4 @@
-import { envs } from "../config/environment";
+import { envs } from "../../config/environment";
 
 export interface HealthStatus {
   status: "OK" | "ERROR";

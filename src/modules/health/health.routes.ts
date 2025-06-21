@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { HealthController } from "../controllers/health.controller";
+import { HealthController } from "./health.controller";
 
 export class HealthRouter {
   public readonly router: Router;

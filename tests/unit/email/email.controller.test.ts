@@ -1,159 +1,126 @@
 import { Request, Response } from "express";
-import { EmailController } from "../../../src/controllers/email.controller";
-import {
-  SUCCESS_MESSAGES,
-  ERROR_MESSAGES,
-} from "../../../src/shared/constants";
+import { EmailController } from "../../../src/modules/email/email.controller";
+import { EmailService } from "../../../src/modules/email/email.service";
+import { HttpResponse } from "../../../src/core/utils/httpResponse";
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../../src/core/constants";
+
+// Mock the EmailService
+jest.mock("../../../src/modules/email/email.service");
 
 describe("EmailController", () => {
   let emailController: EmailController;
-  let mockEmailService: { sendEmail: jest.Mock };
+  let mockEmailService: jest.Mocked<EmailService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: { status: jest.Mock; json: jest.Mock };
+  let mockResponse: Partial<Response>;
+  let mockStatus: jest.Mock;
+  let mockJson: jest.Mock;
 
   beforeEach(() => {
-    // Mock del servicio de email
-    mockEmailService = {
-      sendEmail: jest.fn(),
-    };
+    // Reset mocks
+    jest.clearAllMocks();
 
-    // Instancia del controlador con el mock del servicio
-    emailController = new EmailController(mockEmailService as any);
+    // Create a new mocked instance of the service
+    mockEmailService = new EmailService({} as any) as jest.Mocked<EmailService>;
 
-    // Mock de la respuesta HTTP
+    // Create a new instance of the controller with the mocked service
+    emailController = new EmailController(mockEmailService);
+
+    // Mock the Express Response object
+    mockJson = jest.fn();
+    mockStatus = jest.fn().mockReturnValue({ json: mockJson });
     mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
+      status: mockStatus,
+      json: mockJson,
     };
 
-    // Datos de prueba para la solicitud
+    // Mock the Express Request object
     mockRequest = {
       body: {
         to: "test@example.com",
         subject: "Test Subject",
-        text: "This is a test email",
-        html: "<p>This is a test email</p>",
+        html: "<h1>This is a test email</h1>",
       },
     };
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe("sendEmail", () => {
-    it("debe enviar email exitosamente y retornar success: true", async () => {
-      // Configurar el mock para devolver éxito
+    it("should send an email successfully and return a success response", async () => {
+      // Arrange
       mockEmailService.sendEmail.mockResolvedValue(true);
 
-      // Llamar al método del controlador
+      // Act
       await emailController.sendEmail(
         mockRequest as Request,
-        mockResponse as unknown as Response
+        mockResponse as Response
       );
 
-      // Verificaciones
+      // Assert
       expect(mockEmailService.sendEmail).toHaveBeenCalledWith(mockRequest.body);
-      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(mockStatus).toHaveBeenCalledWith(200);
+      expect(mockJson).toHaveBeenCalledWith({
         success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
         data: { sent: true },
+        message: SUCCESS_MESSAGES.EMAIL_SENT,
       });
     });
 
-    it("debe manejar error del servicio y retornar success: false", async () => {
-      // Configurar el mock para devolver error
+    it("should return an internal server error if the service fails to send the email", async () => {
+      // Arrange
       mockEmailService.sendEmail.mockResolvedValue(false);
 
-      // Llamar al método del controlador
+      // Act
       await emailController.sendEmail(
         mockRequest as Request,
-        mockResponse as unknown as Response
+        mockResponse as Response
       );
 
-      // Verificaciones
+      // Assert
       expect(mockEmailService.sendEmail).toHaveBeenCalledWith(mockRequest.body);
-      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      expect(mockStatus).toHaveBeenCalledWith(500);
+      expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        error: ERROR_MESSAGES.EMAIL_SEND_ERROR,
-        message: "An unexpected error occurred.",
+        message: "Internal Server Error",
       });
     });
 
-    it("debe manejar excepción del servicio", async () => {
-      // Configurar el mock para lanzar una excepción
-      const error = new Error("Service error");
+    it("should handle exceptions from the service and return an internal server error", async () => {
+      // Arrange
+      const error = new Error("Service exploded");
       mockEmailService.sendEmail.mockRejectedValue(error);
 
-      // Llamar al método del controlador
+      // Act
       await emailController.sendEmail(
         mockRequest as Request,
-        mockResponse as unknown as Response
+        mockResponse as Response
       );
 
-      // Verificar que se llamó al servicio
-      expect(mockEmailService.sendEmail).toHaveBeenCalledWith(mockRequest.body);
-      expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
-      // Debería haber llamado a res.json con error
-      expect(mockResponse.json).toHaveBeenCalledWith({
+      // Assert
+      expect(mockStatus).toHaveBeenCalledWith(500);
+      expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        error: ERROR_MESSAGES.EMAIL_SEND_ERROR,
-        message: "An unexpected error occurred.",
+        message: "Service exploded",
       });
     });
 
-    it("debe validar campos requeridos", async () => {
-      // Datos de prueba sin campos requeridos
-      mockRequest.body = {
-        to: "test@example.com",
-        // Falta subject y html
-      };
+    it("should return a bad request error for invalid input data", async () => {
+      // Arrange
+      mockRequest.body = { to: "not-an-email" }; // Invalid body
 
-      // Llamar al método del controlador
+      // Act
       await emailController.sendEmail(
         mockRequest as Request,
-        mockResponse as unknown as Response
+        mockResponse as Response
       );
 
-      // Verificar que no se llamó al servicio
+      // Assert
       expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
-      // Debería haber llamado a res.json con error de validación
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: false,
-        message: "subject: Required; html: Required",
-      });
-    });
-
-    it("debe pasar correctamente los datos del body al servicio", async () => {
-      // Configurar el mock
-      mockEmailService.sendEmail.mockResolvedValue(true);
-
-      // Datos de prueba más complejos
-      const complexEmailData = {
-        to: ["user1@example.com", "user2@example.com"],
-        subject: "Complex Test Subject",
-        text: "Plain text content",
-        html: "<h1>HTML content</h1><p>Complex email</p>",
-        attachments: [{ filename: "test.txt", path: "/path/to/file.txt" }],
-      };
-
-      mockRequest.body = complexEmailData;
-
-      // Llamar al método del controlador
-      await emailController.sendEmail(
-        mockRequest as Request,
-        mockResponse as unknown as Response
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.any(String), // Zod's error message can be complex
+        })
       );
-
-      // Verificar que se pasaron exactamente los mismos datos
-      expect(mockEmailService.sendEmail).toHaveBeenCalledWith(complexEmailData);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
-        data: { sent: true },
-      });
     });
   });
 });

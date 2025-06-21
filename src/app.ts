@@ -1,12 +1,13 @@
 import express, { Express } from "express";
-import { corsMiddleware } from "./middlewares/cors";
-import { ErrorHandler } from "./middlewares/errorHandler";
+import { corsMiddleware } from "./middlewares/cors.middlewares";
+import { ErrorHandler } from "./middlewares/errorHandler.middlewares";
 import { envs } from "./config/environment";
 import apiRoutes from "./routes/index";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import { specs } from "./config/swagger";
-import "./swagger"; // Import all Swagger documentation
+// import "./modules/health/docs/health.swagger";
+// import "./modules/email/docs/email.swagger";
 
 export class App {
   private app: Express;

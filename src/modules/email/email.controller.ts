@@ -1,9 +1,9 @@
-import { EmailService } from "../services/email/email.service";
+import { EmailService } from "./email.service";
 import { Request, Response } from "express";
-import { HttpResponse } from "../shared/utils/httpResponse";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../shared/constants";
-import { sendEmailSchema } from "../services/email/schemas/email.schema";
-import { EmailOptions } from "../services/email/dtos/emailOptions.dto";
+import { HttpResponse } from "../../core/utils/httpResponse";
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../core/constants";
+import { sendEmailSchema } from "./schemas/email.schema";
+import { EmailOptions } from "./dtos/emailOptions.dto";
 
 export class EmailController {
   private readonly _emailService: EmailService;
@@ -42,7 +42,7 @@ export class EmailController {
         );
       }
     } catch (error) {
-      return HttpResponse.internalServer(res, ERROR_MESSAGES.EMAIL_SEND_ERROR);
+      return HttpResponse.internalServer(res, "Failed to send email.", error);
     }
   }
 }

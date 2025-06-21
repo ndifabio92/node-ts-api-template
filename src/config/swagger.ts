@@ -178,7 +178,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ["./src/swagger/*.ts", "./src/routes/*.ts", "./src/controllers/*.ts"], // Updated to include swagger folder
+  apis: ["./src/modules/**/*.swagger.ts", "./src/modules/**/*.routes.ts"],
 };
 
 export const specs = swaggerJsdoc(options);

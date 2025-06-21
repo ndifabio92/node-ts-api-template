@@ -1,12 +1,23 @@
 import { Response } from "express";
+import { envs } from "../../config/environment";
+
+interface IResponse {
+  success: boolean;
+  data?: any;
+  message: string;
+}
 
 export class HttpResponse {
   static success(res: Response, data: any, message = "Success") {
     return res.status(200).json({ success: true, message, data });
   }
 
-  static badRequest(res: Response, message = "Bad Request") {
-    return res.status(400).json({ success: false, message });
+  static badRequest(res: Response, message: string) {
+    const response: IResponse = {
+      success: false,
+      message: message,
+    };
+    return res.status(400).json(response);
   }
 
   static unauthorized(res: Response, message = "Unauthorized") {
@@ -23,9 +34,16 @@ export class HttpResponse {
 
   static internalServer(
     res: Response,
-    error = "Internal Server Error",
-    message = "An unexpected error occurred."
+    message = "An unexpected error occurred.",
+    error?: any
   ) {
-    return res.status(500).json({ success: false, error, message });
+    const errorMsg =
+      envs.development && error ? error.message : "Internal Server Error";
+
+    const response: IResponse = {
+      success: false,
+      message: errorMsg,
+    };
+    return res.status(500).json(response);
   }
 }

@@ -1,6 +1,6 @@
 import cors, { CorsOptions } from "cors";
 import { envs } from "../config/environment";
-import { HttpMethod } from "../shared/utils/httpMethod";
+import { HttpMethod } from "../core/utils/httpMethod";
 
 export class CorsMiddleware {
   private static isOriginAllowed(

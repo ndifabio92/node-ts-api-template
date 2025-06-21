@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { HttpResponse } from "../shared/utils/httpResponse";
+import { HttpResponse } from "../core/utils/httpResponse";
+import { envs } from "../config/environment";
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -7,30 +8,22 @@ export interface AppError extends Error {
 }
 
 export class ErrorHandler {
-  static handle(
-    error: AppError,
+  public static handle(
+    err: any,
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
   ) {
-    console.error("Error:", error);
+    console.error("Error:", err);
 
     // Si ya se envió una respuesta, pasar al siguiente middleware
     if (res.headersSent) {
-      return next(error);
+      return _next(err);
     }
 
-    const statusCode = error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
-
-    // En desarrollo, incluir stack trace
-    const errorResponse: any = {
-      success: false,
-      message,
-      ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
-    };
-
-    return res.status(statusCode).json(errorResponse);
+    // Use HttpResponse for a consistent error response format
+    const message = err.message || "An internal server error occurred.";
+    return HttpResponse.internalServer(res, message, err);
   }
 
   static createError(message: string, statusCode: number = 500): AppError {

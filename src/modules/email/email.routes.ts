@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { EmailController } from "../controllers/email.controller";
+import { EmailController } from "./email.controller";
 
 export class EmailRouter {
   public readonly router: Router;

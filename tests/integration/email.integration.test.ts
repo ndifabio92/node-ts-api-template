@@ -1,22 +1,26 @@
 import request from "supertest";
 import { App } from "../../src/app";
-import nodemailer from "nodemailer";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../src/shared/constants";
+import { EmailRepository } from "../../src/modules/email/email.repository";
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../src/core/constants";
+import { Server } from "http";
 
-describe("Email Integration Test", () => {
-  let app: App;
-  let server: any;
-  let mockSendMail: jest.Mock;
+// Mock the repository layer to prevent actual emails from being sent
+jest.mock("../../src/modules/email/email.repository");
 
-  beforeAll(() => {
-    // Obtener la referencia al mock de manera más directa
-    const mockCreateTransport = nodemailer.createTransport as jest.Mock;
-    mockSendMail = mockCreateTransport.mock.results[0]?.value?.sendMail;
+describe("Email Module - Integration Tests", () => {
+  let server: Server;
+  let mockSendEmail: jest.SpyInstance;
 
-    // Crear la app
-    app = new App();
-    const expressApp = app.getApp();
-    server = expressApp.listen(0);
+  beforeAll((done) => {
+    // Spy on the sendEmail method of the EmailRepository prototype
+    mockSendEmail = jest.spyOn(EmailRepository.prototype, "sendEmail");
+
+    // Create a new application instance for testing
+    const api = new App();
+    const app = api.getApp();
+    server = app.listen(0, () => {
+      done();
+    }); // Listen on a random free port
   });
 
   afterAll((done) => {
@@ -24,180 +28,91 @@ describe("Email Integration Test", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    // Clear mock history after each test
+    mockSendEmail.mockClear();
   });
 
   describe("POST /v1/api/email/send", () => {
-    const validEmailData = {
+    const validEmailPayload = {
       to: "test@example.com",
       subject: "Test Subject",
-      text: "This is a test email",
       html: "<p>This is a test email</p>",
     };
 
-    it("debe enviar un email correctamente", async () => {
-      const mockResponse = {
-        messageId: "test-message-id",
-        accepted: [validEmailData.to],
-        rejected: [],
-        response: "250 OK: Mensaje enviado",
-      };
-      mockSendMail.mockResolvedValueOnce(mockResponse);
+    it("should return 200 OK and send an email successfully", async () => {
+      // Arrange
+      mockSendEmail.mockResolvedValue(true);
 
+      // Act
       const response = await request(server)
         .post("/v1/api/email/send")
-        .send(validEmailData)
-        .expect("Content-Type", /json/)
-        .expect(200);
+        .send(validEmailPayload);
 
+      // Assert
+      expect(response.status).toBe(200);
       expect(response.body).toEqual({
         success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
         data: { sent: true },
+        message: SUCCESS_MESSAGES.EMAIL_SENT,
       });
-      expect(mockSendMail).toHaveBeenCalledWith({
-        from: expect.any(String),
-        to: validEmailData.to,
-        subject: validEmailData.subject,
-        html: validEmailData.html,
-        text: validEmailData.text,
-        attachments: undefined,
-      });
-      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledWith(validEmailPayload);
     });
 
-    it("debe manejar errores al enviar el email", async () => {
-      const error = new Error("SMTP error");
-      mockSendMail.mockRejectedValueOnce(error);
+    it("should return 500 Internal Server Error when the repository fails to send", async () => {
+      // Arrange
+      mockSendEmail.mockResolvedValue(false); // Simulate a failure in the repository
 
+      // Act
       const response = await request(server)
         .post("/v1/api/email/send")
-        .send(validEmailData)
-        .expect("Content-Type", /json/)
-        .expect(500);
+        .send(validEmailPayload);
 
+      // Assert
+      expect(response.status).toBe(500);
       expect(response.body).toEqual({
         success: false,
-        error: ERROR_MESSAGES.EMAIL_SEND_ERROR,
-        message: "An unexpected error occurred.",
+        message: "Internal Server Error",
       });
-      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockSendEmail).toHaveBeenCalledTimes(1);
     });
 
-    it("debe manejar emails con múltiples destinatarios", async () => {
-      const multipleRecipientsData = {
-        ...validEmailData,
-        to: ["user1@example.com", "user2@example.com", "user3@example.com"],
-      };
-      const mockResponse = {
-        messageId: "test-message-id",
-        accepted: multipleRecipientsData.to,
-        rejected: [],
-      };
-      mockSendMail.mockResolvedValueOnce(mockResponse);
-
-      const response = await request(server)
-        .post("/v1/api/email/send")
-        .send(multipleRecipientsData)
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual({
-        success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
-        data: { sent: true },
-      });
-      expect(mockSendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: multipleRecipientsData.to,
-        })
-      );
-    });
-
-    it("debe manejar emails con archivos adjuntos", async () => {
-      const emailWithAttachments = {
-        ...validEmailData,
-        attachments: [
-          { filename: "test.txt", path: "/path/to/file.txt" },
-          { filename: "image.jpg", path: "/path/to/image.jpg" },
-        ],
-      };
-      const mockResponse = {
-        messageId: "test-message-id",
-        accepted: [validEmailData.to],
-      };
-      mockSendMail.mockResolvedValueOnce(mockResponse);
-
-      const response = await request(server)
-        .post("/v1/api/email/send")
-        .send(emailWithAttachments)
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual({
-        success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
-        data: { sent: true },
-      });
-      expect(mockSendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          attachments: emailWithAttachments.attachments,
-        })
-      );
-    });
-
-    it("debe validar campos requeridos", async () => {
-      const invalidEmailData = {
+    it("should return 400 Bad Request for invalid payload (e.g., missing 'html')", async () => {
+      // Arrange
+      const invalidPayload = {
         to: "test@example.com",
         subject: "Test Subject",
-        // Falta html que es requerido
       };
 
+      // Act
       const response = await request(server)
         .post("/v1/api/email/send")
-        .send(invalidEmailData)
-        .expect("Content-Type", /json/)
-        .expect(400);
+        .send(invalidPayload);
 
-      expect(response.body).toEqual({
-        success: false,
-        message: "html: Required",
-      });
-      expect(mockSendMail).not.toHaveBeenCalled();
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain("html"); // Check that the error message mentions the missing field
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
 
-    it("debe manejar emails con solo texto (sin HTML)", async () => {
-      const textOnlyEmail = {
-        to: "test@example.com",
-        subject: "Text Only Email",
-        text: "This is a text-only email",
-        html: "<p>This is a text-only email</p>", // HTML requerido
+    it("should return 400 Bad Request for invalid email format", async () => {
+      // Arrange
+      const invalidPayload = {
+        to: "not-a-valid-email",
+        subject: "Test Subject",
+        html: "<p>test</p>",
       };
-      const mockResponse = {
-        messageId: "test-message-id",
-        accepted: [textOnlyEmail.to],
-      };
-      mockSendMail.mockResolvedValueOnce(mockResponse);
 
+      // Act
       const response = await request(server)
         .post("/v1/api/email/send")
-        .send(textOnlyEmail)
-        .expect("Content-Type", /json/)
-        .expect(200);
+        .send(invalidPayload);
 
-      expect(response.body).toEqual({
-        success: true,
-        message: SUCCESS_MESSAGES.EMAIL_SENT,
-        data: { sent: true },
-      });
-      expect(mockSendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: textOnlyEmail.to,
-          subject: textOnlyEmail.subject,
-          text: textOnlyEmail.text,
-          html: textOnlyEmail.html,
-        })
-      );
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,3 +1,5 @@
+import { envs } from "../../config/environment";
+
 export enum LogLevel {
   ERROR = "ERROR",
   WARN = "WARN",
@@ -14,7 +16,7 @@ export interface LogEntry {
 }
 
 export class Logger {
-  private static isDevelopment = process.env.NODE_ENV === "development";
+  private static isDevelopment = envs.development ? "development" : "prod";
 
   static error(message: string, context?: Record<string, any>, error?: Error) {
     this.log(LogLevel.ERROR, message, context, error);

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { HealthService } from "../services/health.service";
-import { HttpResponse } from "../shared/utils/httpResponse";
+import { HealthService } from "./health.service";
+import { HttpResponse } from "../../core/utils/httpResponse";
 
 export class HealthController {
   private readonly _healthService: HealthService;
