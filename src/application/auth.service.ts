@@ -1,5 +1,4 @@
 import { IAuthRepository } from "../domain/interfaces/IAuthRepository";
-import { IUserRepository } from "../domain/interfaces/IUserRepository";
 import {
   AuthToken,
   CreateAuthTokenDto,
@@ -11,7 +10,7 @@ import { RepositoryFactory } from "../infrastructure/persistence/repository.fact
 import { UserService } from "./user.service";
 import { envs } from "../infrastructure/config/environment";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 export class AuthService {
   private authRepository: IAuthRepository;
@@ -166,7 +165,7 @@ export class AuthService {
 
   private async hashPassword(password: string): Promise<string> {
     // En un entorno real, usarías bcrypt o argon2
-    return crypto.createHash("sha256").update(password).digest("hex");
+    return await bcrypt.hash(password, 10);
   }
 
   private async verifyPassword(

@@ -1,7 +1,5 @@
 import { UserService } from "../src/application/user.service";
-import { RepositoryFactory } from "../src/infrastructure/persistence/repository.factory";
 import { UserRole } from "../src/domain/entities/user.entity";
-import crypto from "crypto";
 
 async function seedAdmin() {
   try {
