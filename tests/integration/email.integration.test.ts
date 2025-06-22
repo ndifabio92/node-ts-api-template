@@ -1,11 +1,11 @@
 import request from "supertest";
-import { App } from "../../src/app";
-import { EmailRepository } from "../../src/modules/email/email.repository";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../src/core/constants";
 import { Server } from "http";
+import { EmailRepository } from "../../src/infrastructure/persistence/email.repository";
+import { App } from "../../src/infrastructure/web/app";
+import { SUCCESS_MESSAGES } from "../../src/infrastructure/shared/constants";
 
 // Mock the repository layer to prevent actual emails from being sent
-jest.mock("../../src/modules/email/email.repository");
+jest.mock("../../src/infrastructure/persistence/email.repository");
 
 describe("Email Module - Integration Tests", () => {
   let server: Server;

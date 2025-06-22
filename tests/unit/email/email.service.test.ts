@@ -1,9 +1,9 @@
-import { EmailService } from "../../../src/modules/email/email.service";
-import { EmailRepository } from "../../../src/modules/email/email.repository";
-import { EmailOptions } from "../../../src/modules/email/dtos/emailOptions.dto";
+import { EmailOptions } from "../../../src/application/dtos/emailOptions.dto";
+import { EmailService } from "../../../src/application/email.service";
+import { EmailRepository } from "../../../src/infrastructure/persistence/email.repository";
 
 // Mock the EmailRepository
-jest.mock("../../../src/modules/email/email.repository");
+jest.mock("../../../src/infrastructure/persistence/email.repository");
 
 describe("EmailService", () => {
   let emailService: EmailService;

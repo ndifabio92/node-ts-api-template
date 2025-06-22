@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
-import { EmailController } from "../../../src/modules/email/email.controller";
-import { EmailService } from "../../../src/modules/email/email.service";
-import { HttpResponse } from "../../../src/core/utils/httpResponse";
-import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "../../../src/core/constants";
+import { EmailController } from "../../../src/infrastructure/web/controllers/email.controller";
+import { EmailService } from "../../../src/application/email.service";
+import { SUCCESS_MESSAGES } from "../../../src/infrastructure/shared/constants";
 
 // Mock the EmailService
-jest.mock("../../../src/modules/email/email.service");
+jest.mock("../../../src/application/email.service");
 
 describe("EmailController", () => {
   let emailController: EmailController;
