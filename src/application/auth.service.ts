@@ -9,6 +9,8 @@ import {
 import { CreateUserDto } from "../domain/entities/user.entity";
 import { RepositoryFactory } from "../infrastructure/persistence/repository.factory";
 import { UserService } from "./user.service";
+import { envs } from "../infrastructure/config/environment";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 export class AuthService {
@@ -80,17 +82,24 @@ export class AuthService {
   async refreshToken(
     refreshToken: string
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    // Verificar que el token existe y no ha expirado
-    const token = await this.authRepository.findTokenByValue(refreshToken);
-    if (!token || token.type !== "refresh" || token.expiresAt < new Date()) {
+    try {
+      // Verificar el JWT refresh token
+      const decoded = jwt.verify(refreshToken, envs.jwtRefreshSecret) as any;
+
+      // Verificar que el token existe en la base de datos
+      const token = await this.authRepository.findTokenByValue(refreshToken);
+      if (!token || token.type !== "refresh" || token.expiresAt < new Date()) {
+        throw new Error("Invalid or expired refresh token");
+      }
+
+      // Eliminar el token anterior
+      await this.authRepository.deleteToken(token.id!);
+
+      // Generar nuevos tokens
+      return await this.generateTokens(decoded.userId);
+    } catch (error) {
       throw new Error("Invalid or expired refresh token");
     }
-
-    // Eliminar el token anterior
-    await this.authRepository.deleteToken(token.id!);
-
-    // Generar nuevos tokens
-    return await this.generateTokens(token.userId);
   }
 
   async logout(userId: string): Promise<boolean> {
@@ -99,31 +108,54 @@ export class AuthService {
   }
 
   async validateToken(token: string): Promise<AuthToken | null> {
-    const authToken = await this.authRepository.findTokenByValue(token);
-    if (!authToken || authToken.expiresAt < new Date()) {
+    try {
+      // Verificar el JWT access token
+      const decoded = jwt.verify(token, envs.jwtSecret) as any;
+
+      // Verificar que el token existe en la base de datos
+      const authToken = await this.authRepository.findTokenByValue(token);
+      if (!authToken || authToken.expiresAt < new Date()) {
+        return null;
+      }
+      return authToken;
+    } catch (error) {
       return null;
     }
-    return authToken;
   }
 
   private async generateTokens(
     userId: string
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const accessToken = crypto.randomBytes(32).toString("hex");
-    const refreshToken = crypto.randomBytes(32).toString("hex");
+    // Generar JWT access token
+    const accessToken = jwt.sign({ userId, type: "access" }, envs.jwtSecret, {
+      expiresIn: "15m",
+    });
+
+    // Generar JWT refresh token
+    const refreshToken = jwt.sign(
+      { userId, type: "refresh" },
+      envs.jwtRefreshSecret,
+      { expiresIn: "7d" }
+    );
+
+    // Calcular fechas de expiración
+    const accessTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ); // 7 días
 
     const accessTokenData: CreateAuthTokenDto = {
       userId,
       token: accessToken,
       type: "access",
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutos
+      expiresAt: accessTokenExpiresAt,
     };
 
     const refreshTokenData: CreateAuthTokenDto = {
       userId,
       token: refreshToken,
       type: "refresh",
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
+      expiresAt: refreshTokenExpiresAt,
     };
 
     await this.authRepository.createToken(accessTokenData);

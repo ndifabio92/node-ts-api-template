@@ -29,6 +29,10 @@ MONGO_PASSWORD=password
 POSTGRES_DB=myapp
 POSTGRES_USER=user
 POSTGRES_PASSWORD=password
+
+# JWT Configuration (¡IMPORTANTE! Cambia estos valores en producción)
+JWT_SECRET=your-super-secure-jwt-secret-key
+JWT_REFRESH_SECRET=your-super-secure-jwt-refresh-secret-key
 ```
 
 ## 🚀 Configuración Rápida

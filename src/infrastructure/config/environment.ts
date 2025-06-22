@@ -24,6 +24,8 @@ const envSchema = z.object({
   POSTGRES_PASSWORD: z.string().min(1),
   DATABASE_TYPE: z.enum(["mongodb", "postgresql"]).default("mongodb"),
   DATABASE_URL: z.string().min(1),
+  JWT_SECRET: z.string().min(1),
+  JWT_REFRESH_SECRET: z.string().min(1),
 });
 
 const envParse = envSchema.safeParse(process.env);
@@ -52,4 +54,6 @@ export const envs = {
   postgresPassword: envParse.data.POSTGRES_PASSWORD,
   databaseType: envParse.data.DATABASE_TYPE,
   databaseUrl: envParse.data.DATABASE_URL,
+  jwtSecret: envParse.data.JWT_SECRET,
+  jwtRefreshSecret: envParse.data.JWT_REFRESH_SECRET,
 };
